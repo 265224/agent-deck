@@ -1,0 +1,56 @@
+import AppKit
+import CoreGraphics
+import Foundation
+
+enum NotchStatus: Equatable {
+    case closed
+    case opened
+    case popping
+}
+
+enum NotchOpenReason: Equatable {
+    case click
+    case hover
+    case notification
+    case boot
+}
+
+enum TrackedEventIngress {
+    case bridge
+    case rollout
+}
+
+// MARK: - Overlay presentation
+
+enum OverlayPresentationMode: String, CaseIterable, Identifiable {
+    case notch
+    case desktopPet
+
+    var id: String { rawValue }
+}
+
+// MARK: - Island appearance
+
+enum IslandAppearanceMode: String, CaseIterable, Identifiable {
+    case `default`
+    case custom
+
+    var id: String { rawValue }
+}
+
+enum IslandClosedDisplayStyle: String, CaseIterable, Identifiable {
+    case minimal
+    case detailed
+
+    var id: String { rawValue }
+}
+
+enum IslandPixelShapeStyle: String, CaseIterable, Identifiable {
+    case bars
+    case bear
+    case steps
+    case blocks
+    case custom
+
+    var id: String { rawValue }
+}

@@ -1,0 +1,189 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  build-and-release:
+    runs-on: macos-26
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Extract version from tag
+        id: version
+        run: echo "version=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
+
+      - name: Install dependencies
+        run: |
+          brew install create-dmg
+          pip3 install --break-system-packages Pillow
+
+      - name: Import signing certificate
+        env:
+          CERTIFICATE_P12: ${{ secrets.APPLE_CERTIFICATE_P12 }}
+          CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+        run: |
+          # Decode the p12 certificate from base64
+          CERT_FILE="$(mktemp).p12"
+          echo "$CERTIFICATE_P12" | base64 --decode > "$CERT_FILE"
+
+          # Create a temporary keychain
+          KEYCHAIN_PATH="$RUNNER_TEMP/build.keychain-db"
+          KEYCHAIN_PASSWORD="$(uuidgen)"
+          security create-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+          security set-keychain-settings -lut 21600 "$KEYCHAIN_PATH"
+          security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+
+          # Import the certificate (.p12 = identity = cert + private key)
+          security import "$CERT_FILE" \
+            -P "$CERTIFICATE_PASSWORD" \
+            -A \
+            -f pkcs12 \
+            -k "$KEYCHAIN_PATH"
+          security set-key-partition-list \
+            -S apple-tool:,apple: \
+            -k "$KEYCHAIN_PASSWORD" \
+            "$KEYCHAIN_PATH"
+
+          # Add the keychain to the search list
+          security list-keychains -d user -s "$KEYCHAIN_PATH" $(security list-keychains -d user | tr -d '"')
+
+          # Store notarytool credentials in the keychain
+          xcrun notarytool store-credentials "agent-deck-notary" \
+            --apple-id "${{ secrets.APPLE_ID }}" \
+            --team-id "${{ secrets.APPLE_TEAM_ID }}" \
+            --password "${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}" \
+            --keychain "$KEYCHAIN_PATH"
+
+          # Clean up
+          rm -f "$CERT_FILE"
+
+      - name: Build and package (signed)
+        env:
+          AGENT_DECK_APP_NAME: "Agent Deck"
+          AGENT_DECK_BUNDLE_ID: "app.agentdeck.AgentDeck"
+          AGENT_DECK_VERSION: ${{ steps.version.outputs.version }}
+          AGENT_DECK_BUILD_NUMBER: ${{ github.run_number }}
+          AGENT_DECK_SIGN_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY }}
+          AGENT_DECK_UNIVERSAL: "true"
+        run: zsh scripts/package-app.sh
+
+      - name: Verify artifacts
+        run: |
+          test -f "output/package/Agent Deck.zip"
+          test -f "output/package/Agent Deck.dmg"
+          ls -lh output/package/
+
+      - name: Verify code signature
+        run: |
+          bundle="output/package/Agent Deck.app"
+          echo "--- Signature info ---"
+          codesign -dvv "$bundle"
+          echo ""
+          echo "--- Signature verification ---"
+          codesign --verify --deep --strict --verbose=2 "$bundle"
+
+      - name: Verify bundle structure
+        run: |
+          bundle="output/package/Agent Deck.app"
+          echo "--- Bundle contents ---"
+          find "$bundle" -maxdepth 3 -type f | sort
+
+          # Required files
+          for f in \
+            "Contents/MacOS/AgentDeckApp" \
+            "Contents/Helpers/AgentDeckHooks" \
+            "Contents/Helpers/AgentDeckSetup" \
+            "Contents/Resources/AgentDeck.icns" \
+            "Contents/Resources/AgentDeck_AgentDeckApp.bundle" \
+          ; do
+            if [[ ! -e "$bundle/$f" ]]; then
+              echo "::error::Missing required file: $f"
+              exit 1
+            fi
+          done
+
+          echo "Bundle structure OK"
+
+      - name: Notarize (best-effort)
+        if: vars.SKIP_NOTARIZE != 'true'
+        id: notarize
+        continue-on-error: true
+        env:
+          AGENT_DECK_APP_NAME: "Agent Deck"
+        run: |
+          bundle="output/package/$AGENT_DECK_APP_NAME.app"
+          zip_path="output/package/$AGENT_DECK_APP_NAME.zip"
+          dmg_path="output/package/$AGENT_DECK_APP_NAME.dmg"
+
+          echo "Submitting for notarization..."
+          xcrun notarytool submit "$zip_path" \
+            --keychain-profile "agent-deck-notary" \
+            --wait --timeout 10m || { echo "::warning::Notarization failed or timed out"; exit 1; }
+
+          echo "Stapling app bundle..."
+          xcrun stapler staple -v "$bundle"
+
+          # Re-create zip with stapled bundle
+          rm -f "$zip_path"
+          ditto -c -k --keepParent "$bundle" "$zip_path"
+
+          # Re-sign and notarize DMG
+          codesign --force --sign "${{ secrets.APPLE_SIGNING_IDENTITY }}" --timestamp "$dmg_path"
+          xcrun notarytool submit "$dmg_path" \
+            --keychain-profile "agent-deck-notary" \
+            --wait --timeout 10m || { echo "::warning::DMG notarization failed or timed out"; exit 1; }
+          xcrun stapler staple -v "$dmg_path"
+
+          echo "notarized=true" >> "$GITHUB_OUTPUT"
+
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" \
+            --title "Agent Deck $GITHUB_REF_NAME" \
+            --generate-notes \
+            --notes-start-tag "$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo '')" \
+            --draft \
+            "output/package/Agent Deck.dmg#Agent Deck.dmg (macOS, Universal)" \
+            "output/package/Agent Deck.zip#Agent Deck.zip (macOS, Universal)"
+
+      - name: Append install instructions to release notes
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NOTARIZED: ${{ steps.notarize.outputs.notarized }}
+        run: |
+          existing="$(gh release view "$GITHUB_REF_NAME" --json body -q .body)"
+          if [[ "$NOTARIZED" == "true" ]]; then
+            install_note="> This build is signed and notarized by Apple. It will launch without Gatekeeper warnings."
+          else
+            install_note="> This build is signed with a Developer ID certificate. On first launch, right-click → **Open** to bypass Gatekeeper."
+          fi
+          gh release edit "$GITHUB_REF_NAME" --notes "$(cat <<EOF
+          ${existing}
+
+          ---
+
+          ## Installation
+
+          1. Download **Agent Deck.dmg**, open it, and drag **Agent Deck** to **Applications**.
+          2. Requires **macOS 14+** (Apple Silicon and Intel).
+
+          ${install_note}
+          EOF
+          )"
+
+      - name: Cleanup keychain
+        if: always()
+        run: |
+          KEYCHAIN_PATH="$RUNNER_TEMP/build.keychain-db"
+          security delete-keychain "$KEYCHAIN_PATH" 2>/dev/null || true
