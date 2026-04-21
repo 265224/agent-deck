@@ -153,8 +153,13 @@ public enum CatPawHookInstaller {
 
     private static func isAgentDeckCatPawHookCommand(_ command: String) -> Bool {
         let normalized = command.lowercased()
-        return (normalized.contains("agentdeckhooks") || normalized.contains("agentdeckhooks"))
-            && normalized.contains("catpaw")
+        guard normalized.contains("catpaw") else {
+            return false
+        }
+
+        return normalized.contains("agentdeckhooks")
+            || normalized.contains("vibeislandhooks")
+            || normalized.contains("vibe-island")
     }
 
     private static func shellQuote(_ string: String) -> String {

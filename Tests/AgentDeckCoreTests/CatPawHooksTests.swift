@@ -112,6 +112,46 @@ struct CatPawHooksTests {
     }
 
     @Test
+    func catPawHookInstallerReplacesLegacyVibeIslandHooks() throws {
+        let existing = """
+        {
+            "hooks": {
+                "beforeSubmitPrompt": [
+                    { "command": "/usr/local/bin/custom-catpaw-hook" },
+                    { "command": "'/Users/test/Library/Application Support/VibeIsland/bin/VibeIslandHooks' --source catpaw" }
+                ],
+                "stop": [
+                    { "command": "'/Users/test/Library/Application Support/VibeIsland/bin/VibeIslandHooks' --source catpaw" }
+                ]
+            }
+        }
+        """.data(using: .utf8)!
+
+        let mutation = try CatPawHookInstaller.installHooksJSON(
+            existingData: existing,
+            hookCommand: "/usr/local/bin/AgentDeckHooks --source catpaw"
+        )
+
+        let data = try #require(mutation.contents)
+        let object = try JSONSerialization.jsonObject(with: data) as! [String: Any]
+        let hooks = object["hooks"] as! [String: Any]
+        let promptEntries = hooks["beforeSubmitPrompt"] as! [[String: Any]]
+        let stopEntries = hooks["stop"] as! [[String: Any]]
+
+        #expect(promptEntries.count == 2)
+        #expect(promptEntries[0]["command"] as? String == "/usr/local/bin/custom-catpaw-hook")
+        #expect(promptEntries[1]["command"] as? String == "/usr/local/bin/AgentDeckHooks --source catpaw")
+        #expect(stopEntries.count == 1)
+        #expect(stopEntries[0]["command"] as? String == "/usr/local/bin/AgentDeckHooks --source catpaw")
+
+        let allCommands = hooks.values
+            .compactMap { $0 as? [[String: Any]] }
+            .flatMap { $0 }
+            .compactMap { $0["command"] as? String }
+        #expect(!allCommands.contains { $0.contains("VibeIslandHooks") })
+    }
+
+    @Test
     func catPawHookInstallerUninstallsManagedHooksOnly() throws {
         let installed = try CatPawHookInstaller.installHooksJSON(
             existingData: nil,
