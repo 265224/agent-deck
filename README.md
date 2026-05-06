@@ -5,22 +5,20 @@
 <h1 align="center">Agent Deck</h1>
 
 <p align="center">
-  <strong>Why pay for a closed-source app just to monitor your coding agents?</strong>
+  <strong>Open-source control surface for Codex and coding agents on macOS.</strong>
   <br>
-  Open-source, local-first, native macOS companion for AI coding agents.
+  Local-first, native, and built for real agent maintenance workflows.
   <br><br>
   <a href="README.zh-CN.md">中文</a> | <strong>English</strong>
 </p>
 
 <p align="center">
-  <a href="https://github.com/Octane0411/agent-deck/releases/latest"><img src="https://img.shields.io/github/v/release/Octane0411/agent-deck?style=flat-square&label=release&color=blue" alt="Latest Release"></a>
-  <a href="https://github.com/Octane0411/agent-deck/stargazers"><img src="https://img.shields.io/github/stars/Octane0411/agent-deck?style=flat-square&color=yellow" alt="Stars"></a>
+  <a href="https://github.com/265224/agent-deck/stargazers"><img src="https://img.shields.io/github/stars/265224/agent-deck?style=flat-square&color=yellow" alt="Stars"></a>
   <a href="https://discord.gg/bPF2HpbCFb"><img src="https://img.shields.io/badge/discord-join-5865F2?style=flat-square&logo=discord" alt="Discord"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/license-GPL%20v3-green?style=flat-square" alt="License: GPL v3"></a>
 </p>
 
 <p align="center">
-  <a href="https://github.com/Octane0411/agent-deck/releases">Download</a> ·
   <a href="#quick-start">Quick Start</a> ·
   <a href="docs/roadmap.md">Roadmap</a> ·
   <a href="CONTRIBUTING.md">Contributing</a>
@@ -34,19 +32,26 @@
 
 ## What is Agent Deck?
 
-Agent Deck sits in your Mac's **notch** (or top bar) and gives you a real-time control surface for your AI coding agents — session status, permission approvals, and instant jump-back to the right terminal. All without leaving your flow.
+Agent Deck sits in your Mac's **notch** (or top bar) and gives you a real-time control surface for Codex and other AI coding agents: session status, permission approvals, usage windows, and instant jump-back to the right terminal. All without leaving your flow.
 
-Think of it as an open-source [Agent Deck](https://agentdeck.app/) — **free, local-first, and you own every bit of it**.
-
-> *You do not need to pay for a product you can build yourself.*
+It is an open-source, local-first alternative for developers who want their agent workflow, telemetry, and automation hooks to stay on their own machine.
 
 ## Why Agent Deck?
 
 - **Open source** — GPL v3, fork it, mod it, ship your own version
 - **Local-first** — No server, no telemetry, no account. Everything runs on your Mac
 - **Native macOS** — SwiftUI + AppKit, not an Electron wrapper
-- **Multi-agent** — One surface for Claude Code, Codex, Cursor, CatPaw, Gemini CLI, OpenCode, and more
+- **Multi-agent** — One surface for Codex, Claude Code, Cursor, CatPaw, Gemini CLI, OpenCode, and more
 - **Multi-terminal** — Jump back to the exact terminal/IDE session in one click
+
+## Codex Workflow Support
+
+Agent Deck treats Codex as a first-class integration, not a generic process watcher:
+
+- **Managed Codex hooks** — Installs and removes `SessionStart`, `UserPromptSubmit`, and `Stop` hooks in `~/.codex/config.toml`
+- **Local session discovery** — Reads Codex rollout files under `~/.codex/sessions/**/rollout-*.jsonl` for session and usage state
+- **Permission and status surface** — Shows live session state, notifications, and quick jump-back to the terminal or IDE that owns the work
+- **Fail-open bridge** — Hook payloads go through a local Unix socket, and Codex keeps running normally if Agent Deck is closed
 
 ## Supported Agents & Terminals
 
@@ -103,20 +108,16 @@ Think of it as an open-source [Agent Deck](https://agentdeck.app/) — **free, l
 | i18n | English, Simplified Chinese |
 | Session discovery | Auto-discover from local transcripts, persist across launches |
 | Auto-update | Sparkle-based automatic updates |
-| Signed & notarized | DMG packaging with Apple notarization |
+| Release workflow | DMG packaging, Sparkle appcast, signing, and notarization documentation |
 
 </details>
 
 ## Quick Start
 
-### Option 1: Download
-
-Grab the latest DMG from [GitHub Releases](https://github.com/Octane0411/agent-deck/releases) — signed and notarized, ready to run.
-
-### Option 2: Build from source
+### Build from source
 
 ```bash
-git clone https://github.com/Octane0411/agent-deck.git
+git clone https://github.com/265224/agent-deck.git
 cd agent-deck
 open Package.swift   # Opens in Xcode — hit Run
 ```
@@ -124,6 +125,10 @@ open Package.swift   # Opens in Xcode — hit Run
 On first launch, Agent Deck auto-discovers your active agent sessions and starts the live bridge. Hook installation is managed from the **Control Center** inside the app.
 
 > **Requirements**: macOS 14+, Swift 6.2, Xcode
+
+### Release builds
+
+Signed and notarized DMG builds are published through [GitHub Releases](https://github.com/265224/agent-deck/releases) when available. The release workflow is documented in [docs/releasing.md](docs/releasing.md).
 
 ## How It Works
 
@@ -180,7 +185,7 @@ Copy this prompt into your agent (Claude Code, Codex, etc.) to auto-generate a w
 <summary>Click to expand</summary>
 
 ```
-I'm having an issue with Agent Deck (https://github.com/Octane0411/agent-deck).
+I'm having an issue with Agent Deck (https://github.com/265224/agent-deck).
 
 Please help me file a GitHub issue. Do the following:
 
@@ -201,26 +206,16 @@ Please help me file a GitHub issue. Do the following:
    - Body with sections: **Environment**, **Description**, **Steps to Reproduce**, **Expected vs Actual Behavior**
    - Add label "bug" if applicable
 
-Repository: Octane0411/agent-deck
+Repository: 265224/agent-deck
 ```
 
 </details>
 
-## Star History
-
-<a href="https://star-history.com/#Octane0411/agent-deck&Date">
- <picture>
-   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=Octane0411/agent-deck&type=Date&theme=dark" />
-   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/svg?repos=Octane0411/agent-deck&type=Date" />
-   <img alt="Star History Chart" src="https://api.star-history.com/svg?repos=Octane0411/agent-deck&type=Date" />
- </picture>
-</a>
-
 ## Contributors
 
-<a href="https://github.com/Octane0411/agent-deck/graphs/contributors">
+<a href="https://github.com/265224/agent-deck/graphs/contributors">
   <!-- CONTRIBUTORS-IMG:START -->
-  <img src="https://contrib.rocks/image?repo=Octane0411/agent-deck&t=1775913499" />
+  <img src="https://contrib.rocks/image?repo=265224/agent-deck&t=1775913499" />
   <!-- CONTRIBUTORS-IMG:END -->
 </a>
 

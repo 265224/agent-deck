@@ -109,7 +109,7 @@ Every release ships two artifacts:
 The file `appcast.xml` in the repo root is the Sparkle update feed. It is served via GitHub raw content at:
 
 ```
-https://raw.githubusercontent.com/Octane0411/agent-deck/main/appcast.xml
+https://raw.githubusercontent.com/265224/agent-deck/main/appcast.xml
 ```
 
 Each release needs a new `<item>` entry. Template:
@@ -122,7 +122,7 @@ Each release needs a new `<item>` entry. Template:
     <sparkle:minimumSystemVersion>14.0</sparkle:minimumSystemVersion>
     <pubDate>Thu, 06 Apr 2026 00:00:00 +0000</pubDate>
     <enclosure
-        url="https://github.com/Octane0411/agent-deck/releases/download/vX.Y.Z/Agent.Deck.zip"
+        url="https://github.com/265224/agent-deck/releases/download/vX.Y.Z/Agent.Deck.zip"
         type="application/octet-stream"
         sparkle:edSignature="PASTE_SIGNATURE_HERE"
         length="PASTE_LENGTH_HERE"

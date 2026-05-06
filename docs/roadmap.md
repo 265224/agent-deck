@@ -10,14 +10,14 @@ You can also fork your own version and modify it however you like — but PRing 
 
 > **How to contribute**:
 > 1. Describe your idea clearly in an issue, then submit a PR. See [CONTRIBUTING.md](../CONTRIBUTING.md) for details.
-> 2. After any contribution (code or otherwise) gets merged, you can become a maintainer — just reach out to [@Octane0411](https://github.com/Octane0411) (you can usually find me in the WeChat group, or by email).
+> 2. After any contribution (code or otherwise) gets merged, you can become a maintainer — open an issue or reach out through the community channels.
 
 ## Focus Areas
 
 | # | Area | Description | Status | Links |
 |---|------|-------------|--------|-------|
 | 1 | **Code Agent Experience** | We currently focus mainly on Claude Code and Codex — we hope to improve the experience together with the community. For other agents (OpenCode, Gemini CLI, etc.), we believe the best experience will be built by deep users of those tools — community-driven iteration welcome. | Active | — |
-| 2 | **IDE / Plugin Jump-back** | Support jumping back to IDE or in-IDE terminal windows, or apps with integrated code agent plugins (Cursor, VSCode, GoLand, Obsidian, etc.). | Planned | [#173](https://github.com/Octane0411/agent-deck/issues/173), [#183](https://github.com/Octane0411/agent-deck/issues/183) |
+| 2 | **IDE / Plugin Jump-back** | Support jumping back to IDE or in-IDE terminal windows, or apps with integrated code agent plugins (Cursor, VSCode, GoLand, Obsidian, etc.). | Planned | — |
 | 3 | **More Terminals** | Add support for terminal apps not yet on the supported list. If your terminal isn't supported, you're the best person to add it. | Open | — |
 | 4 | **SSH Jump-back** | We currently support detecting and notifying code agent sessions over SSH. Jump-back is harder and needs more work. | Open | — |
 | 5 | **Interaction & Polish** | Better UX, UI, animations, sound design, and overall feel. [Agent Deck](https://agentdeck.app/) sets a high bar here — we welcome community ideas and contributions in this space. | Open | — |
